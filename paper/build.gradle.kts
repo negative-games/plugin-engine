@@ -29,6 +29,9 @@ dependencies {
     // PlaceholderAPI
     compileOnly("me.clip:placeholderapi:2.11.7")
 
+    // PacketEvents
+    compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
+
     // Spring & Jakarta
     compileOnly("org.springframework:spring-context:6.2.13")
     compileOnly("jakarta.annotation:jakarta.annotation-api:3.0.0")
