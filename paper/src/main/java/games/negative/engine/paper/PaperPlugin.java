@@ -2,6 +2,7 @@ package games.negative.engine.paper;
 
 import games.negative.engine.Plugin;
 import games.negative.engine.message.util.MiniMessageUtil;
+import games.negative.engine.paper.event.ClientItemLorePacketBridge;
 import games.negative.engine.paper.scheduler.Scheduler;
 import games.negative.engine.state.Reloadable;
 import games.negative.moss.paper.MossPaper;
@@ -20,6 +21,8 @@ import java.util.function.Consumer;
 @Slf4j
 public abstract class PaperPlugin extends MossPaper implements Plugin {
 
+    private ClientItemLorePacketBridge clientItemLorePacketBridge;
+
     @Override
     public void loadInitialComponents(AnnotationConfigApplicationContext context) {
         super.loadInitialComponents(context);
@@ -37,6 +40,19 @@ public abstract class PaperPlugin extends MossPaper implements Plugin {
                 listener -> getServer().getPluginManager().registerEvents(listener, this),
                 (listener, e) -> log.error("Failed to register listener: {}", listener.getClass().getSimpleName(), e)
         );
+
+        this.clientItemLorePacketBridge = new ClientItemLorePacketBridge(this);
+        this.clientItemLorePacketBridge.enable();
+    }
+
+    @Override
+    public void onDisable() {
+        if (this.clientItemLorePacketBridge != null) {
+            this.clientItemLorePacketBridge.disable();
+            this.clientItemLorePacketBridge = null;
+        }
+
+        super.onDisable();
     }
 
     @Override
