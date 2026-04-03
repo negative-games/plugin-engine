@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerAbstract;
 import com.github.retrooper.packetevents.event.PacketListenerCommon;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.item.ItemStack;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
@@ -11,7 +12,6 @@ import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
@@ -28,32 +28,33 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
     private static final int CARRIED_ITEM_SLOT = -1;
 
     private final Plugin plugin;
-    private PacketListenerCommon listenerHandle;
+    private PacketListenerCommon registeredListener;
 
     public ClientItemLorePacketBridge(Plugin plugin) {
+        super();
         this.plugin = plugin;
     }
 
     public void enable() {
-        if (listenerHandle != null) return;
+        if (registeredListener != null) return;
         if (PacketEvents.getAPI() == null) {
             log.warn("PacketEvents API is unavailable; client item lore bridge was not registered");
             return;
         }
 
-        this.listenerHandle = PacketEvents.getAPI().getEventManager().registerListener(this);
+        this.registeredListener = PacketEvents.getAPI().getEventManager().registerListener(this);
         log.info("Enabled PacketEvents client item lore bridge");
     }
 
     public void disable() {
-        if (listenerHandle == null) return;
+        if (registeredListener == null) return;
         if (PacketEvents.getAPI() == null) {
-            this.listenerHandle = null;
+            this.registeredListener = null;
             return;
         }
 
-        PacketEvents.getAPI().getEventManager().unregisterListener(listenerHandle);
-        this.listenerHandle = null;
+        PacketEvents.getAPI().getEventManager().unregisterListener(registeredListener);
+        this.registeredListener = null;
     }
 
     @Override
@@ -73,7 +74,7 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
 
     private void handleSetSlot(PacketSendEvent event, Player player) {
         WrapperPlayServerSetSlot wrapper = new WrapperPlayServerSetSlot(event);
-        com.github.retrooper.packetevents.protocol.item.ItemStack updatedItem = applyLore(
+        ItemStack updatedItem = applyLore(
                 player,
                 wrapper.getWindowId(),
                 wrapper.getSlot(),
@@ -88,11 +89,11 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
     private void handleWindowItems(PacketSendEvent event, Player player) {
         WrapperPlayServerWindowItems wrapper = new WrapperPlayServerWindowItems(event);
 
-        List<com.github.retrooper.packetevents.protocol.item.ItemStack> items = wrapper.getItems();
-        List<com.github.retrooper.packetevents.protocol.item.ItemStack> modifiedItems = new ArrayList<>(items.size());
+        List<ItemStack> items = wrapper.getItems();
+        List<ItemStack> modifiedItems = new ArrayList<>(items.size());
         for (int slot = 0; slot < items.size(); slot++) {
-            com.github.retrooper.packetevents.protocol.item.ItemStack originalItem = items.get(slot);
-            com.github.retrooper.packetevents.protocol.item.ItemStack updatedItem = applyLore(
+            ItemStack originalItem = items.get(slot);
+            ItemStack updatedItem = applyLore(
                     player,
                     wrapper.getWindowId(),
                     slot,
@@ -102,9 +103,9 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
         }
         wrapper.setItems(modifiedItems);
 
-        Optional<com.github.retrooper.packetevents.protocol.item.ItemStack> carriedItem = wrapper.getCarriedItem();
+        Optional<ItemStack> carriedItem = wrapper.getCarriedItem();
         if (carriedItem.isPresent()) {
-            com.github.retrooper.packetevents.protocol.item.ItemStack updatedCarriedItem = applyLore(
+            ItemStack updatedCarriedItem = applyLore(
                     player,
                     wrapper.getWindowId(),
                     CARRIED_ITEM_SLOT,
@@ -116,15 +117,15 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
         }
     }
 
-    private com.github.retrooper.packetevents.protocol.item.ItemStack applyLore(
+    private ItemStack applyLore(
             Player player,
             int windowId,
             int slot,
-            com.github.retrooper.packetevents.protocol.item.ItemStack packetItem
+            ItemStack packetItem
     ) {
         if (packetItem == null) return null;
 
-        ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(packetItem);
+        org.bukkit.inventory.ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(packetItem);
         if (bukkitItem == null || bukkitItem.getType().isAir()) return null;
 
         List<Component> originalLore = readLore(bukkitItem);
@@ -136,7 +137,7 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
             return packetItem;
         }
 
-        ItemStack clientItem = bukkitItem.clone();
+        org.bukkit.inventory.ItemStack clientItem = bukkitItem.clone();
         ItemMeta meta = clientItem.getItemMeta();
         if (meta == null) {
             log.warn("Unable to apply client-side lore to item without item meta: {}", clientItem.getType());
@@ -148,7 +149,7 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
         return SpigotConversionUtil.fromBukkitItemStack(clientItem);
     }
 
-    private List<Component> readLore(ItemStack itemStack) {
+    private List<Component> readLore(org.bukkit.inventory.ItemStack itemStack) {
         ItemMeta meta = itemStack.getItemMeta();
         if (meta == null) {
             return List.of();
