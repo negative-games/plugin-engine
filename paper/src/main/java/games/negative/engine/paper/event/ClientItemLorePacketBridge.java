@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * PacketEvents bridge that fires {@link ClientItemLoreEvent} for outgoing item packets.
+ * Direct PacketEvents bridge that fires {@link ClientItemLoreEvent} for outgoing item packets.
  */
 @Slf4j
 public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
