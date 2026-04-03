@@ -46,6 +46,10 @@ public final class ClientItemLoreEvent extends PlayerEvent {
         return originalItem.clone();
     }
 
+    /**
+     * Returns an immutable snapshot of the current client-side lore.
+     * Use {@link #setLore(List)}, {@link #addLoreLine(Component)}, or {@link #clearLore()} to change it.
+     */
     public List<Component> getLore() {
         return List.copyOf(lore);
     }

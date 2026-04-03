@@ -200,7 +200,10 @@ public final class ClientItemLorePacketBridge {
 
         ItemStack clientItem = bukkitItem.clone();
         ItemMeta meta = clientItem.getItemMeta();
-        if (meta == null) return null;
+        if (meta == null) {
+            log.warn("Unable to apply client-side lore to item without item meta: {}", clientItem.getType());
+            return packetItem;
+        }
 
         meta.lore(lore);
         clientItem.setItemMeta(meta);
