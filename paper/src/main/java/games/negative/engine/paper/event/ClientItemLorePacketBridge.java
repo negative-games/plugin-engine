@@ -134,14 +134,14 @@ public final class ClientItemLorePacketBridge extends PacketListenerAbstract {
 
         List<Component> lore = event.getLore();
         if (lore.equals(originalLore)) {
-            return packetItem;
+            return null;
         }
 
         org.bukkit.inventory.ItemStack clientItem = bukkitItem.clone();
         ItemMeta meta = clientItem.getItemMeta();
         if (meta == null) {
             log.warn("Unable to apply client-side lore to item without item meta: {}", clientItem.getType());
-            return packetItem;
+            return null;
         }
 
         meta.lore(lore);
