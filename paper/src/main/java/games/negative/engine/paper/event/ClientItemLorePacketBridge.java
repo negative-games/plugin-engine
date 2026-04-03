@@ -9,6 +9,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.MethodHandles;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,11 +46,19 @@ public final class ClientItemLorePacketBridge {
             this.eventManager = api.getClass().getMethod("getEventManager").invoke(api);
 
             InvocationHandler handler = (proxy, method, args) -> {
+                if (method.getDeclaringClass() == Object.class) {
+                    return handleObjectMethod(proxy, method.getName(), args);
+                }
+
                 if ("onPacketSend".equals(method.getName()) && args != null && args.length == 1) {
                     onPacketSend(args[0]);
                 }
 
-                return null;
+                if (method.isDefault()) {
+                    return invokeDefaultMethod(proxy, method, args);
+                }
+
+                return defaultValue(method.getReturnType());
             };
 
             Object listener = Proxy.newProxyInstance(packetListenerClass.getClassLoader(), new Class[]{packetListenerClass}, handler);
@@ -101,8 +110,6 @@ public final class ClientItemLorePacketBridge {
             switch (packetTypeEnum.name()) {
                 case "SET_SLOT" -> handleSetSlot(packetSendEvent, player);
                 case "WINDOW_ITEMS" -> handleWindowItems(packetSendEvent, player);
-                default -> {
-                }
             }
         } catch (ReflectiveOperationException exception) {
             log.warn("Failed to process outgoing item packet", exception);
@@ -182,14 +189,19 @@ public final class ClientItemLorePacketBridge {
         ItemStack bukkitItem = toBukkitItem(packetItem);
         if (bukkitItem == null || bukkitItem.getType().isAir()) return null;
 
+        List<Component> originalLore = readLore(bukkitItem);
         ClientItemLoreEvent event = new ClientItemLoreEvent(player, windowId, slot, bukkitItem);
         plugin.getServer().getPluginManager().callEvent(event);
+
+        List<Component> lore = event.getLore();
+        if (lore.equals(originalLore)) {
+            return packetItem;
+        }
 
         ItemStack clientItem = bukkitItem.clone();
         ItemMeta meta = clientItem.getItemMeta();
         if (meta == null) return null;
 
-        List<Component> lore = event.getLore();
         meta.lore(lore);
         clientItem.setItemMeta(meta);
 
@@ -248,5 +260,47 @@ public final class ClientItemLorePacketBridge {
         return packetEventsPlugin == null
                 ? plugin.getClass().getClassLoader()
                 : packetEventsPlugin.getClass().getClassLoader();
+    }
+
+    private List<Component> readLore(ItemStack itemStack) {
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return List.of();
+        }
+
+        List<Component> lore = meta.lore();
+        return lore == null ? List.of() : List.copyOf(lore);
+    }
+
+    private Object invokeDefaultMethod(Object proxy, java.lang.reflect.Method method, Object[] args) throws Throwable {
+        return MethodHandles.privateLookupIn(method.getDeclaringClass(), MethodHandles.lookup())
+                .unreflectSpecial(method, method.getDeclaringClass())
+                .bindTo(proxy)
+                .invokeWithArguments(args == null ? new Object[0] : args);
+    }
+
+    private Object handleObjectMethod(Object proxy, String methodName, Object[] args) {
+        return switch (methodName) {
+            case "toString" -> getClass().getSimpleName();
+            case "hashCode" -> System.identityHashCode(proxy);
+            case "equals" -> proxy == (args == null || args.length == 0 ? null : args[0]);
+            default -> null;
+        };
+    }
+
+    private Object defaultValue(Class<?> returnType) {
+        if (!returnType.isPrimitive()) {
+            return null;
+        }
+
+        if (returnType == boolean.class) return false;
+        if (returnType == char.class) return '\0';
+        if (returnType == byte.class) return (byte) 0;
+        if (returnType == short.class) return (short) 0;
+        if (returnType == int.class) return 0;
+        if (returnType == long.class) return 0L;
+        if (returnType == float.class) return 0F;
+        if (returnType == double.class) return 0D;
+        return null;
     }
 }

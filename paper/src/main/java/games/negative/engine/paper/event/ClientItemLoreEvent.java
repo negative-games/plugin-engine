@@ -27,7 +27,7 @@ public final class ClientItemLoreEvent extends PlayerEvent {
         super(player);
         this.windowId = windowId;
         this.slot = slot;
-        this.originalItem = item.clone();
+        this.originalItem = item;
 
         ItemMeta meta = item.getItemMeta();
         List<Component> currentLore = meta == null ? List.of() : meta.lore();
@@ -47,11 +47,15 @@ public final class ClientItemLoreEvent extends PlayerEvent {
     }
 
     public List<Component> getLore() {
-        return lore;
+        return List.copyOf(lore);
     }
 
     public void setLore(List<Component> lore) {
         this.lore = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+    }
+
+    public void addLoreLine(Component line) {
+        this.lore.add(line);
     }
 
     public void clearLore() {
