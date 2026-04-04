@@ -10,8 +10,6 @@ import org.bukkit.plugin.PluginManager;
 @Slf4j
 public final class ClientItemLorePacketBridge {
 
-    private static final String PACKET_EVENTS_CLASS = "com.github.retrooper.packetevents.PacketEvents";
-    private static final String IMPLEMENTATION_CLASS = "games.negative.engine.paper.event.PacketEventsClientItemLorePacketBridge";
     private static final String[] PACKET_EVENTS_PLUGIN_NAMES = {"packetevents", "PacketEvents"};
 
     private final Plugin plugin;
@@ -29,17 +27,10 @@ public final class ClientItemLorePacketBridge {
         }
 
         try {
-            Class<?> implementationClass = Class.forName(IMPLEMENTATION_CLASS, true, plugin.getClass().getClassLoader());
-            Object implementation = implementationClass.getConstructor(Plugin.class).newInstance(plugin);
-
-            if (!(implementation instanceof ClientItemLoreBridge bridge)) {
-                log.warn("PacketEvents client item lore bridge implementation does not implement ClientItemLoreBridge");
-                return;
-            }
-
+            ClientItemLoreBridge bridge = new PacketEventsClientItemLorePacketBridge(plugin);
             bridge.enable();
             this.delegate = bridge;
-        } catch (ReflectiveOperationException | LinkageError exception) {
+        } catch (LinkageError exception) {
             log.warn("Failed to initialize PacketEvents client item lore bridge", exception);
         }
     }
@@ -52,16 +43,7 @@ public final class ClientItemLorePacketBridge {
     }
 
     private boolean isPacketEventsPresent() {
-        if (getPacketEventsPlugin() == null) {
-            return false;
-        }
-
-        try {
-            Class.forName(PACKET_EVENTS_CLASS, false, plugin.getClass().getClassLoader());
-            return true;
-        } catch (ClassNotFoundException exception) {
-            return false;
-        }
+        return getPacketEventsPlugin() != null;
     }
 
     private Plugin getPacketEventsPlugin() {
