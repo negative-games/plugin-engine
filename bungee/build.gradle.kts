@@ -34,7 +34,7 @@ dependencies {
 
     // Adventure
     compileOnly("net.kyori:adventure-platform-bungeecord:4.4.1")
-    compileOnly("et.kyori:adventure-text-minimessage:4.26.1")
+    compileOnly("net.kyori:adventure-text-minimessage:4.26.1")
 
     // ConfigLib
     compileOnly("de.exlll:configlib-yaml:4.8.1")
