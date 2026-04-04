@@ -30,8 +30,10 @@ public final class ClientItemLorePacketBridge {
             ClientItemLoreBridge bridge = new PacketEventsClientItemLorePacketBridge(plugin);
             bridge.enable();
             this.delegate = bridge;
+        } catch (NoClassDefFoundError exception) {
+            log.warn("PacketEvents is installed but required runtime classes are unavailable; client item lore bridge was not enabled", exception);
         } catch (LinkageError exception) {
-            log.warn("Failed to initialize PacketEvents client item lore bridge", exception);
+            log.warn("Failed to initialize PacketEvents client item lore bridge due to a linkage problem", exception);
         }
     }
 
