@@ -13,6 +13,10 @@ subprojects {
         maven("https://repo.negative.games/repository/maven-releases/")
         maven("https://repo.negative.games/repository/maven-snapshots/")
 
+        // CodeMC
+        maven("https://repo.codemc.io/repository/maven-releases/")
+        maven("https://repo.codemc.io/repository/maven-snapshots/")
+
         // PaperMC
         maven("https://repo.papermc.io/repository/maven-public/")
 
