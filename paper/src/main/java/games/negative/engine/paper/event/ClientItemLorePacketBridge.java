@@ -12,6 +12,7 @@ public final class ClientItemLorePacketBridge {
 
     private static final String PACKET_EVENTS_CLASS = "com.github.retrooper.packetevents.PacketEvents";
     private static final String IMPLEMENTATION_CLASS = "games.negative.engine.paper.event.PacketEventsClientItemLorePacketBridge";
+    private static final String[] PACKET_EVENTS_PLUGIN_NAMES = {"packetevents", "PacketEvents"};
 
     private final Plugin plugin;
     private ClientItemLoreBridge delegate;
@@ -21,13 +22,17 @@ public final class ClientItemLorePacketBridge {
     }
 
     public void enable() {
-        if (delegate != null || !isPacketEventsPresent()) return;
+        if (delegate != null) return;
+        if (!isPacketEventsPresent()) {
+            log.info("PacketEvents not present; client item lore bridge will remain disabled");
+            return;
+        }
 
         try {
             Class<?> implementationClass = Class.forName(IMPLEMENTATION_CLASS, true, plugin.getClass().getClassLoader());
-            Object instance = implementationClass.getConstructor(Plugin.class).newInstance(plugin);
+            Object implementation = implementationClass.getConstructor(Plugin.class).newInstance(plugin);
 
-            if (!(instance instanceof ClientItemLoreBridge bridge)) {
+            if (!(implementation instanceof ClientItemLoreBridge bridge)) {
                 log.warn("PacketEvents client item lore bridge implementation does not implement ClientItemLoreBridge");
                 return;
             }
@@ -47,8 +52,7 @@ public final class ClientItemLorePacketBridge {
     }
 
     private boolean isPacketEventsPresent() {
-        PluginManager pluginManager = plugin.getServer().getPluginManager();
-        if (pluginManager.getPlugin("packetevents") == null && pluginManager.getPlugin("PacketEvents") == null) {
+        if (getPacketEventsPlugin() == null) {
             return false;
         }
 
@@ -58,5 +62,16 @@ public final class ClientItemLorePacketBridge {
         } catch (ClassNotFoundException exception) {
             return false;
         }
+    }
+
+    private Plugin getPacketEventsPlugin() {
+        PluginManager pluginManager = plugin.getServer().getPluginManager();
+        for (String pluginName : PACKET_EVENTS_PLUGIN_NAMES) {
+            Plugin packetEventsPlugin = pluginManager.getPlugin(pluginName);
+            if (packetEventsPlugin != null) {
+                return packetEventsPlugin;
+            }
+        }
+        return null;
     }
 }

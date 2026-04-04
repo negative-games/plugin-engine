@@ -61,7 +61,6 @@ public final class PacketEventsClientItemLorePacketBridge extends PacketListener
 
     @Override
     public void onPacketSend(PacketSendEvent event) {
-        if (ClientItemLoreEvent.getHandlerList().getRegisteredListeners().length == 0) return;
         if (!(event.getPlayer() instanceof Player player)) return;
 
         if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
@@ -130,12 +129,10 @@ public final class PacketEventsClientItemLorePacketBridge extends PacketListener
         org.bukkit.inventory.ItemStack bukkitItem = SpigotConversionUtil.toBukkitItemStack(packetItem);
         if (bukkitItem == null || bukkitItem.getType().isAir()) return null;
 
-        List<Component> originalLore = readLore(bukkitItem);
         ClientItemLoreEvent event = new ClientItemLoreEvent(player, windowId, slot, bukkitItem);
         plugin.getServer().getPluginManager().callEvent(event);
 
-        List<Component> lore = event.getLore();
-        if (lore.equals(originalLore)) {
+        if (!event.isModified()) {
             return null;
         }
 
@@ -146,18 +143,8 @@ public final class PacketEventsClientItemLorePacketBridge extends PacketListener
             return null;
         }
 
-        meta.lore(lore);
+        meta.lore(event.getLore());
         clientItem.setItemMeta(meta);
         return SpigotConversionUtil.fromBukkitItemStack(clientItem);
-    }
-
-    private List<Component> readLore(org.bukkit.inventory.ItemStack itemStack) {
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) {
-            return List.of();
-        }
-
-        List<Component> lore = meta.lore();
-        return lore == null ? List.of() : List.copyOf(lore);
     }
 }

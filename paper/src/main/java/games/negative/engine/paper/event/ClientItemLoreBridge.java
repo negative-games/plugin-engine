@@ -1,6 +1,6 @@
 package games.negative.engine.paper.event;
 
-interface ClientItemLoreBridge {
+public interface ClientItemLoreBridge {
 
     void enable();
 

@@ -22,6 +22,7 @@ public final class ClientItemLoreEvent extends PlayerEvent {
     private final int slot;
     private final ItemStack originalItem;
     private List<Component> lore;
+    private boolean modified;
 
     public ClientItemLoreEvent(Player player, int windowId, int slot, ItemStack item) {
         super(player);
@@ -56,14 +57,21 @@ public final class ClientItemLoreEvent extends PlayerEvent {
 
     public void setLore(List<Component> lore) {
         this.lore = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+        this.modified = true;
     }
 
     public void addLoreLine(Component line) {
         this.lore.add(line);
+        this.modified = true;
     }
 
     public void clearLore() {
         this.lore.clear();
+        this.modified = true;
+    }
+
+    boolean isModified() {
+        return modified;
     }
 
     @Override
