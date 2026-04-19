@@ -4,12 +4,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
  * Represents a number utility class used to handle numbers, parse them, etc.
  */
-public class NumberUtil {
+public final class NumberUtil {
 
     /*
      * Format a number to a fancy format.
@@ -19,6 +20,11 @@ public class NumberUtil {
     );
 
     private static final String SUFFIXES = "kMBTQqSsOND";
+    private static final double LOG_THOUSAND = Math.log(1000);
+
+    private NumberUtil() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     /**
      * Parse a number to a fancy format.
@@ -103,12 +109,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed integer
      */
-    public Optional<Integer> parseInteger(String input) {
-        try {
-            return Optional.of(Integer.parseInt(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Integer> parseInteger(String input) {
+        return parse(input, Integer::valueOf);
     }
 
     /**
@@ -116,12 +118,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed long
      */
-    public Optional<Long> parseLong(String input) {
-        try {
-            return Optional.of(Long.parseLong(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Long> parseLong(String input) {
+        return parse(input, Long::valueOf);
     }
 
     /**
@@ -129,12 +127,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed double
      */
-    public Optional<Double> parseDouble(String input) {
-        try {
-            return Optional.of(Double.parseDouble(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Double> parseDouble(String input) {
+        return parse(input, Double::valueOf);
     }
 
     /**
@@ -142,12 +136,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed float
      */
-    public Optional<Float> parseFloat(String input) {
-        try {
-            return Optional.of(Float.parseFloat(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Float> parseFloat(String input) {
+        return parse(input, Float::valueOf);
     }
 
     /**
@@ -155,12 +145,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed short
      */
-    public Optional<Short> parseShort(String input) {
-        try {
-            return Optional.of(Short.parseShort(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Short> parseShort(String input) {
+        return parse(input, Short::valueOf);
     }
 
     /**
@@ -168,12 +154,8 @@ public class NumberUtil {
      * @param input String input
      * @return Parsed byte
      */
-    public Optional<Byte> parseByte(String input) {
-        try {
-            return Optional.of(Byte.parseByte(input));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+    public static Optional<Byte> parseByte(String input) {
+        return parse(input, Byte::valueOf);
     }
 
     /**
@@ -184,16 +166,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(int number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return decimalFormat(number) + "th";
-        }
-
-        return switch (number % 10) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -204,16 +177,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(long number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return decimalFormat(number) + "th";
-        }
-
-        return switch ((int) (number % 10)) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -224,16 +188,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(double number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return decimalFormat(number) + "th";
-        }
-
-        return switch ((int) (number % 10)) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -244,16 +199,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(float number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return number + "th";
-        }
-
-        return switch ((int) (number % 10)) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -264,16 +210,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(short number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return decimalFormat(number) + "th";
-        }
-
-        return switch (number % 10) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -284,16 +221,7 @@ public class NumberUtil {
      * @return Fancy version of the number
      */
     public static String fancy(byte number) {
-        if (number % 100 >= 11 && number % 100 <= 13) {
-            return decimalFormat(number) + "th";
-        }
-
-        return switch (number % 10) {
-            case 1 -> decimalFormat(number) + "st";
-            case 2 -> decimalFormat(number) + "nd";
-            case 3 -> decimalFormat(number) + "rd";
-            default -> decimalFormat(number) + "th";
-        };
+        return formatOrdinal(number, decimalFormat(number));
     }
 
     /**
@@ -312,14 +240,7 @@ public class NumberUtil {
      * @return Condensed number
      */
     public static String condense(int number, final char[] set) {
-        if (number < 1000) return String.valueOf(number); // Return the number itself if less than 1000.
-
-        int exp = (int) (Math.log(number) / Math.log(1000));
-
-        String suffixes = (set == null) ? SUFFIXES : new String(set);
-        char suffix = suffixes.charAt(Math.min(exp - 1, suffixes.length() - 1));
-
-        return String.format("%.1f%c", number / Math.pow(1000, exp), suffix);
+        return condense((double) number, set);
     }
 
     /**
@@ -338,14 +259,14 @@ public class NumberUtil {
      * @return Condensed number
      */
     public static String condense(double number, final char[] set) {
-        if (number < 1000) return String.valueOf(number); // Return the number itself if less than 1000.
+        double absolute = Math.abs(number);
+        if (absolute < 1000) return String.valueOf(number);
 
-        int exp = (int) (Math.log(number) / Math.log(1000));
-
-        String suffixes = (set == null) ? SUFFIXES : new String(set);
+        int exp = (int) (Math.log(absolute) / LOG_THOUSAND);
+        String suffixes = suffixes(set);
         char suffix = suffixes.charAt(Math.min(exp - 1, suffixes.length() - 1));
 
-        return String.format("%.1f%c", number / Math.pow(1000, exp), suffix);
+        return String.format(Locale.ROOT, "%.1f%c", number / Math.pow(1000, exp), suffix);
     }
 
     /**
@@ -364,14 +285,7 @@ public class NumberUtil {
      * @return Condensed number
      */
     public static String condense(long number, final char[] set) {
-        if (number < 1000) return String.valueOf(number); // Return the number itself if less than 1000.
-
-        int exp = (int) (Math.log(number) / Math.log(1000));
-
-        String suffixes = (set == null) ? SUFFIXES : new String(set);
-        char suffix = suffixes.charAt(Math.min(exp - 1, suffixes.length() - 1));
-
-        return String.format("%.1f%c", number / Math.pow(1000, exp), suffix);
+        return condense((double) number, set);
     }
 
     /**
@@ -391,19 +305,18 @@ public class NumberUtil {
      */
     public static String condense(BigDecimal number, final char[] set) {
         BigDecimal thousand = BigDecimal.valueOf(1000);
-        String condensed;
-        if (number.compareTo(thousand) < 0) {
-            condensed = number.stripTrailingZeros().toPlainString(); // Return the number itself if less than 1000.
-        } else {
-            int exp = (int) (Math.floor(Math.log10(number.doubleValue()) / 3));
-
-            String suffixes = (set == null) ? SUFFIXES : new String(set);
-            char suffix = suffixes.charAt(Math.min(exp - 1, suffixes.length() - 1));
-
-            BigDecimal result = number.divide(thousand.pow(exp), 1, RoundingMode.HALF_UP);
-            condensed = String.format("%.1f%c", result, suffix);
+        BigDecimal absolute = number.abs();
+        if (absolute.compareTo(thousand) < 0) {
+            return number.stripTrailingZeros().toPlainString();
         }
-        return condensed;
+
+        int integerDigits = absolute.precision() - absolute.scale();
+        int exp = Math.max(1, (integerDigits - 1) / 3);
+        String suffixes = suffixes(set);
+        char suffix = suffixes.charAt(Math.min(exp - 1, suffixes.length() - 1));
+
+        BigDecimal result = number.divide(thousand.pow(exp), 1, RoundingMode.HALF_UP);
+        return String.format(Locale.ROOT, "%.1f%c", result, suffix);
     }
 
     /**
@@ -425,4 +338,47 @@ public class NumberUtil {
         return condense(new BigDecimal(number), set);
     }
 
+    private static String formatOrdinal(double number, String formattedNumber) {
+        if (number % 100 >= 11 && number % 100 <= 13) {
+            return formattedNumber + "th";
+        }
+
+        return switch ((int) (number % 10)) {
+            case 1 -> formattedNumber + "st";
+            case 2 -> formattedNumber + "nd";
+            case 3 -> formattedNumber + "rd";
+            default -> formattedNumber + "th";
+        };
+    }
+
+    private static String formatOrdinal(long number, String formattedNumber) {
+        if (number % 100 >= 11 && number % 100 <= 13) {
+            return formattedNumber + "th";
+        }
+
+        return switch ((int) (number % 10)) {
+            case 1 -> formattedNumber + "st";
+            case 2 -> formattedNumber + "nd";
+            case 3 -> formattedNumber + "rd";
+            default -> formattedNumber + "th";
+        };
+    }
+
+    private static String suffixes(char[] set) {
+        return set == null ? SUFFIXES : String.valueOf(set);
+    }
+
+    private static <T> Optional<T> parse(String input, NumberParser<T> parser) {
+        try {
+            return Optional.of(parser.parse(input.trim()));
+        } catch (NullPointerException | NumberFormatException exception) {
+            return Optional.empty();
+        }
+    }
+
+    @FunctionalInterface
+    private interface NumberParser<T> {
+
+        T parse(String input);
+    }
 }

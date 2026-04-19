@@ -49,10 +49,9 @@ public final class MenuInteractionUtil {
             Runnable refreshAction,
             Supplier<InventoryView> inventorySupplier
     ) {
-        refreshAction.run();
-
         UserInterface.invalidateFromCache(player.getUniqueId());
-        UserInterface.CACHE.put(player.getUniqueId(), ui);
+        refreshAction.run();
+        UserInterface.cache(player.getUniqueId(), ui);
 
         Scheduler.entity(player).execute(() -> {
             InventoryView view = inventorySupplier.get();

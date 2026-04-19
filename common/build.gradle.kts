@@ -4,13 +4,8 @@ plugins {
     id("com.gradleup.shadow") version("9.2.2")
 }
 
-var id = "plugin-engine-common"
-var domain = "games.negative.engine"
-var apiVersion = "1.1.0"
-
-repositories {
-    mavenCentral()
-}
+val artifactId = "plugin-engine-common"
+version = "1.1.0"
 
 dependencies {
     // Cloud Command Framework
@@ -40,26 +35,12 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 
-    // Testing
-    testImplementation(platform("org.junit:junit-bom:5.12.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
 }
 
 tasks.shadowJar {
-    archiveBaseName.set(id)
-    archiveVersion.set(apiVersion)
+    archiveBaseName.set(artifactId)
+    archiveVersion.set(project.version.toString())
     archiveClassifier.set("")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
 
 publishing {
@@ -69,12 +50,12 @@ publishing {
                 builtBy(tasks.shadowJar)
             }
 
-            groupId = domain
-            artifactId = id
-            version = apiVersion
+            groupId = project.group.toString()
+            artifactId = artifactId
+            version = project.version.toString()
 
             pom {
-                name.set(id)
+                name.set(artifactId)
                 description.set(project.description)
                 url.set("https://github.com/negative-games/plugin-engine")
 

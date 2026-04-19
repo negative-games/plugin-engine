@@ -80,7 +80,7 @@ public class PlayerInventoryController implements Listener {
      * @return The UserInterface if it exists and matches the event's inventory view; otherwise, null.
      */
     private UserInterface getUserInterface(HumanEntity client, InventoryEvent event) {
-        UserInterface ui = UserInterface.CACHE.get(client.getUniqueId());
+        UserInterface ui = UserInterface.cached(client.getUniqueId());
         if (ui == null) return null;
         if (ui.getView() == null) {
             UserInterface.invalidateFromCache(client.getUniqueId());

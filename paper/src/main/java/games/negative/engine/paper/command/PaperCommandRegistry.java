@@ -28,15 +28,8 @@ public class PaperCommandRegistry implements Enableable {
                 .buildOnEnable(plugin);
 
         ParserRegistry<CommandSourceStack> parser = commands.parserRegistry();
-        plugin.fetchBeans(CloudArgument.class, argument -> {
-            String name = argument.name();
-            if (name == null) {
-                parser.registerParser(ParserDescriptor.of(argument, argument.getType()));
-            } else {
-                parser.registerNamedParser(name, ParserDescriptor.of(argument, argument.getType()));
-            }
-            log.info("Parsed argument: {}", argument.getClass().getSimpleName());
-        }, (argument, e) -> log.error("Could not register argument parser: {}", argument.getClass().getSimpleName(), e));
+        plugin.fetchBeans(CloudArgument.class, argument -> registerArgumentParser(parser, argument), (argument, e) ->
+                log.error("Could not register argument parser: {}", argument.getClass().getSimpleName(), e));
 
         AnnotationParser<CommandSourceStack> annotationParser = new AnnotationParser<>(commands, CommandSourceStack.class);
 
@@ -45,5 +38,20 @@ public class PaperCommandRegistry implements Enableable {
             annotationParser.parse(command);
             log.info("Registered command: {}", command.getClass().getSimpleName());
         }, (command, e) -> log.error("Could not register command: {}", command.getClass().getSimpleName(), e));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerArgumentParser(ParserRegistry<CommandSourceStack> parser, CloudArgument<?, ?> argument) {
+        CloudArgument<CommandSourceStack, Object> typedArgument = (CloudArgument<CommandSourceStack, Object>) argument;
+        String name = typedArgument.name();
+        ParserDescriptor<CommandSourceStack, Object> descriptor = ParserDescriptor.of(typedArgument, typedArgument.getType());
+
+        if (name == null) {
+            parser.registerParser(descriptor);
+        } else {
+            parser.registerNamedParser(name, descriptor);
+        }
+
+        log.info("Parsed argument: {}", argument.getClass().getSimpleName());
     }
 }

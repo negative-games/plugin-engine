@@ -2,6 +2,7 @@ package games.negative.engine.paper.item;
 
 import games.negative.engine.message.util.MiniMessageUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -159,7 +160,12 @@ public final class ItemBuilder {
      * @return the ItemBuilder instance
      */
     public ItemBuilder customModelData(int modelData) {
-        return applyMeta(itemMeta -> itemMeta.setCustomModelData(modelData));
+        return applyItemStack(itemStack -> itemStack.setData(
+                DataComponentTypes.CUSTOM_MODEL_DATA,
+                CustomModelData.customModelData()
+                        .addFloat(modelData)
+                        .build()
+        ));
     }
 
     /**
