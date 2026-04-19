@@ -1,22 +1,21 @@
 package games.negative.engine.paper.util;
 
-
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Utility class for JSON operations using Gson.
@@ -37,16 +36,20 @@ public final class JsonUtil {
      * @return an Optional containing the loaded object, or empty if loading failed
      */
     public static <T> Optional<T> loadFromFile(File file, Class<T> clazz, Gson gson) {
-        if (file == null || !file.exists() || !file.isFile()) {
-            log.error("File {} does not exist or is not a valid file", file != null ? file.getAbsolutePath() : "null");
+        return loadFromFile(path(file), clazz, gson);
+    }
+
+    public static <T> Optional<T> loadFromFile(Path file, Class<T> clazz, Gson gson) {
+        if (!isRegularFile(file)) {
+            log.error("File {} does not exist or is not a valid file", pathString(file));
             return Optional.empty();
         }
 
-        try (Reader reader = new FileReader(file, StandardCharsets.UTF_8)) {
+        try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             T object = gson.fromJson(reader, clazz);
             return Optional.ofNullable(object);
-        } catch (IOException e) {
-            log.error("Failed to load json from file {}", file.getAbsolutePath(), e);
+        } catch (IOException exception) {
+            log.error("Failed to load json from file {}", file.toAbsolutePath(), exception);
             return Optional.empty();
         }
     }
@@ -60,16 +63,20 @@ public final class JsonUtil {
      * @return an Optional containing the loaded object, or empty if loading failed
      */
     public static <T> Optional<T> loadTypeFromFile(File file, Type type, Gson gson) {
-        if (file == null || !file.exists() || !file.isFile()) {
-            log.error("File {} does not exist or is not a valid file", file != null ? file.getAbsolutePath() : "null");
+        return loadTypeFromFile(path(file), type, gson);
+    }
+
+    public static <T> Optional<T> loadTypeFromFile(Path file, Type type, Gson gson) {
+        if (!isRegularFile(file)) {
+            log.error("File {} does not exist or is not a valid file", pathString(file));
             return Optional.empty();
         }
 
-        try (Reader reader = new FileReader(file, StandardCharsets.UTF_8)) {
+        try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             T object = gson.fromJson(reader, type);
             return Optional.ofNullable(object);
-        } catch (IOException e) {
-            log.error("Failed to load json from file {}", file.getAbsolutePath(), e);
+        } catch (IOException exception) {
+            log.error("Failed to load json from file {}", file.toAbsolutePath(), exception);
             return Optional.empty();
         }
     }
@@ -83,21 +90,27 @@ public final class JsonUtil {
      * @return a collection of loaded objects
      */
     public static <T> Collection<T> loadFromDirectory(File directory, Class<T> clazz, Gson gson) {
-        if (directory == null || !directory.exists() || !directory.isDirectory()) {
-            log.error("Directory {} does not exist or is not a valid directory", directory != null ? directory.getAbsolutePath() : "null");
+        return loadFromDirectory(path(directory), clazz, gson);
+    }
+
+    public static <T> Collection<T> loadFromDirectory(Path directory, Class<T> clazz, Gson gson) {
+        if (!isDirectory(directory)) {
+            log.error("Directory {} does not exist or is not a valid directory", pathString(directory));
             return Collections.emptyList();
         }
 
-        List<T> objects = new ArrayList<>();
-
-        File[] files = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
-        if (files == null) return objects;
-
-        for (File file : files) {
-            loadFromFile(file, clazz, gson).ifPresent(objects::add);
+        try (Stream<Path> paths = Files.list(directory)) {
+            return paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".json"))
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                    .map(path -> loadFromFile(path, clazz, gson))
+                    .flatMap(Optional::stream)
+                    .toList();
+        } catch (IOException exception) {
+            log.error("Failed to read json directory {}", directory.toAbsolutePath(), exception);
+            return Collections.emptyList();
         }
-
-        return objects;
     }
 
     /**
@@ -108,40 +121,68 @@ public final class JsonUtil {
      * @param <T> the type of the object to save
      */
     public static <T> void saveToFile(File file, T object, Gson gson) {
-        if (file == null) {
-            log.error("File is null, cannot save object");
-            return;
-        }
+        saveToFile(path(file), object, gson);
+    }
 
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                log.error("Failed to save file {}", file.getAbsolutePath(), e);
-                return;
-            }
-        }
-
-        try (Writer writer = new FileWriter(file, StandardCharsets.UTF_8)) {
-            gson.toJson(object, writer);
-        } catch (IOException e) {
-            log.error("Failed to save to file {}", file.getAbsolutePath(), e);
-        }
+    public static <T> void saveToFile(Path file, T object, Gson gson) {
+        writeJson(file, gson, object, null);
     }
 
     /**
      * Saves a JSON object to a file using a Type.
      * @param file the file to save to
+     * @param object the object to save
      * @param type the Type of the object to save
      * @param gson the Gson instance to use for serialization
      */
-    public static void saveTypeToFile(File file, Type type, Gson gson) {
-        try (Writer writer = new FileWriter(file, StandardCharsets.UTF_8)) {
-            gson.toJson(type, writer);
-        } catch (IOException e) {
-            log.error("Failed to save to file {}", file.getAbsolutePath(), e);
+    public static <T> void saveToFile(File file, T object, Type type, Gson gson) {
+        saveToFile(path(file), object, type, gson);
+    }
+
+    public static <T> void saveToFile(Path file, T object, Type type, Gson gson) {
+        writeJson(file, gson, object, type);
+    }
+
+    private static Path path(File file) {
+        return file == null ? null : file.toPath();
+    }
+
+    private static boolean isRegularFile(Path file) {
+        return file != null && Files.isRegularFile(file);
+    }
+
+    private static boolean isDirectory(Path directory) {
+        return directory != null && Files.isDirectory(directory);
+    }
+
+    private static String pathString(Path path) {
+        return path == null ? "null" : path.toAbsolutePath().toString();
+    }
+
+    private static void prepareParentDirectory(Path file) throws IOException {
+        Path parent = file.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
     }
 
-}
+    private static <T> void writeJson(Path file, Gson gson, T object, Type type) {
+        if (file == null) {
+            log.error("File is null, cannot save object");
+            return;
+        }
 
+        try {
+            prepareParentDirectory(file);
+            try (var writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+                if (type == null) {
+                    gson.toJson(object, writer);
+                } else {
+                    gson.toJson(object, type, writer);
+                }
+            }
+        } catch (IOException exception) {
+            log.error("Failed to save to file {}", file.toAbsolutePath(), exception);
+        }
+    }
+}

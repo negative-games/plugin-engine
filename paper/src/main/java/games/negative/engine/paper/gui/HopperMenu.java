@@ -15,7 +15,11 @@ import org.bukkit.inventory.MenuType;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Contract;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Represents a chest-based GUI menu for players.
@@ -24,6 +28,8 @@ import java.util.*;
  * when closed.
  */
 public abstract class HopperMenu implements UserInterface {
+
+    private static final int HOPPER_SIZE = 5;
 
     private Component title = Component.text("Hopper Menu");
 
@@ -169,7 +175,7 @@ public abstract class HopperMenu implements UserInterface {
      * @param button The button to add
      */
     public void addButton(Button button) {
-        for (int i = 0; i < inventory.getTopInventory().getSize(); i++) {
+        for (int i = 0; i < HOPPER_SIZE; i++) {
             if (buttons.containsKey(i)) continue;
 
             addButton(i, button);

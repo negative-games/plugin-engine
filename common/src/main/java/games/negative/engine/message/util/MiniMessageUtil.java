@@ -13,10 +13,9 @@ import java.util.Optional;
 /**
  * Represents the MiniMessageUtil class.
  */
+public final class MiniMessageUtil {
 
-public class MiniMessageUtil {
-
-    public static MiniMessage INSTANCE = MiniMessage.miniMessage();
+    private static MiniMessage provider = MiniMessage.miniMessage();
 
     private static final LegacyComponentSerializer ULTRA_LEGACY_SERIALIZER = LegacyComponentSerializer.builder()
             .character(LegacyComponentSerializer.SECTION_CHAR)
@@ -34,17 +33,25 @@ public class MiniMessageUtil {
 
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
+    private MiniMessageUtil() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
     /**
      * Initializes the MiniMessage instance with the provided placeholders.
      * @param placeholders an array of TagResolver.Single to be used as placeholders
      */
     public static void init(TagResolver.Single... placeholders) {
         if (placeholders == null || placeholders.length == 0) {
-            INSTANCE = MiniMessage.miniMessage();
+            provider = MiniMessage.miniMessage();
             return;
         }
 
-        INSTANCE = MiniMessage.builder().editTags(builder -> builder.resolvers(placeholders)).build();
+        provider = MiniMessage.builder().editTags(builder -> builder.resolvers(placeholders)).build();
+    }
+
+    public static MiniMessage provider() {
+        return provider;
     }
 
     /**
@@ -77,7 +84,7 @@ public class MiniMessageUtil {
      * @param <T> the type of the audience
      */
     public static <T extends Audience> Component fromText(T recipient, String text, TagResolver.Single... placeholders) {
-        return fromText(resolveProvider(INSTANCE), recipient, text, placeholders);
+        return fromText(provider(), recipient, text, placeholders);
     }
 
     /**
@@ -143,7 +150,7 @@ public class MiniMessageUtil {
      * @param <T> the type of the audience
      */
     public static <T extends Audience> Component fromRelationalText(T origin, T viewer, String text, TagResolver.Single[] placeholders) {
-        return fromRelationalText(resolveProvider(INSTANCE), origin, viewer, text, placeholders);
+        return fromRelationalText(provider(), origin, viewer, text, placeholders);
     }
 
     /**
@@ -179,7 +186,7 @@ public class MiniMessageUtil {
      * @return the MiniMessage string representation
      */
     public static String componentToMiniMessage(Component component) {
-        return resolveProvider(INSTANCE).serialize(component);
+        return provider().serialize(component);
     }
 
     /**
@@ -188,7 +195,7 @@ public class MiniMessageUtil {
      * @return the resulting Component
      */
     public static Component miniMessageToComponent(String text) {
-        return resolveProvider(INSTANCE).deserialize(text);
+        return provider().deserialize(text);
     }
 
     /**
@@ -219,7 +226,7 @@ public class MiniMessageUtil {
         text = LEGACY_SERIALIZER.serialize(deserialize);
 
         Component component = LEGACY_SERIALIZER.deserialize(text);
-        return resolveProvider(INSTANCE).serialize(component);
+        return provider().serialize(component);
     }
 
     /**

@@ -16,8 +16,6 @@ import java.util.UUID;
 
 public interface UserInterface {
 
-    Map<UUID, UserInterface> CACHE = new HashMap<>();
-
     /**
      * Called when a player opens an inventory.
      *
@@ -87,10 +85,26 @@ public interface UserInterface {
      */
     void invalidate();
 
+    static void cache(UUID uuid, UserInterface ui) {
+        CacheHolder.CACHE.put(uuid, ui);
+    }
+
+    static UserInterface cached(UUID uuid) {
+        return CacheHolder.CACHE.get(uuid);
+    }
+
     static void invalidateFromCache(UUID uuid) {
-        UserInterface ui = CACHE.remove(uuid);
+        UserInterface ui = CacheHolder.CACHE.remove(uuid);
         if (ui == null) return;
 
         ui.invalidate();
+    }
+
+    final class CacheHolder {
+
+        private static final Map<UUID, UserInterface> CACHE = new HashMap<>();
+
+        private CacheHolder() {
+        }
     }
 }

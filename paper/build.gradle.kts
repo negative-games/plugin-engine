@@ -4,19 +4,19 @@ plugins {
     id("com.gradleup.shadow") version("9.2.2")
 }
 
-var id = "plugin-engine-paper"
-var domain = "games.negative.engine"
-var apiVersion = "1.2.0"
-
-repositories {
-    mavenCentral()
-}
+val artifactId = "plugin-engine-paper"
+version = "1.2.0"
 
 dependencies {
     implementation(project(":common"))
 
     // Paper
     compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    testImplementation("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+
+    // Gson
+    compileOnly("com.google.code.gson:gson:2.11.0")
+    testImplementation("com.google.code.gson:gson:2.11.0")
 
     // Cloud Command Framework
     compileOnly("org.incendo:cloud-annotations:2.0.0")
@@ -44,19 +44,13 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
 tasks.jar {
     enabled = false
 }
 
 tasks.shadowJar {
-    archiveBaseName.set(id)
-    archiveVersion.set(apiVersion)
+    archiveBaseName.set(artifactId)
+    archiveVersion.set(project.version.toString())
     archiveClassifier.set("")
 }
 
@@ -67,12 +61,12 @@ publishing {
                 builtBy(tasks.shadowJar)
             }
 
-            groupId = domain
-            artifactId = id
-            version = apiVersion
+            groupId = project.group.toString()
+            artifactId = artifactId
+            version = project.version.toString()
 
             pom {
-                name.set(id)
+                name.set(artifactId)
                 description.set(project.description)
                 url.set("https://github.com/negative-games/plugin-engine")
 
